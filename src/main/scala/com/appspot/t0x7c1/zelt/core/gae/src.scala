@@ -2,7 +2,7 @@ package com.appspot.t0x7c1.zelt.core.gae
 
 import com.appspot.t0x7c1.zelt.core
 import com.appspot.t0x7c1.zelt.core.gae
-import javax.servlet.http.{HttpServletResponse}
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 
 abstract trait PhaseBuilder[A <: core.BasePhase]{
