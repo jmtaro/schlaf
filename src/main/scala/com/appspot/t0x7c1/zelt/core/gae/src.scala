@@ -4,7 +4,6 @@ import com.appspot.t0x7c1.zelt.core
 import com.appspot.t0x7c1.zelt.core.gae
 import javax.servlet.http.{HttpServletResponse}
 
-
 abstract trait PhaseBuilder[A <: core.BasePhase]{
   import reflect.Manifest
   def * [B <: A](implicit m: Manifest[B]): B
