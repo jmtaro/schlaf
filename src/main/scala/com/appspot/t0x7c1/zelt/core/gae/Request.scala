@@ -6,8 +6,8 @@ import javax.servlet.http.{HttpServletRequest}
 
 
 class RequestHeader(req: HttpServletRequest) extends core.BaseRequestHeader{
-  lazy val path = req.getRequestURI
-  lazy val method = req.getMethod
+  def path = req.getRequestURI
+  def method = req.getMethod
 }
 
 class Request(req: HttpServletRequest) extends core.BaseRequest{
