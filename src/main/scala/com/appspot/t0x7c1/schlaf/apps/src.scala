@@ -48,8 +48,8 @@ class Request(req: HttpServletRequest) extends core.BaseRequest
   type RequestHeader = apps.RequestHeader
   lazy protected val request = new gae.Request(req)
   lazy val header = new apps.RequestHeader(req)
-  lazy val parameter = request.parameter
-  lazy val parameters = request.parameters
+  def parameter = request.parameter
+  def parameters = request.parameters
 }
 
 class Writer(res: HttpServletResponse) extends core.BaseWriter
