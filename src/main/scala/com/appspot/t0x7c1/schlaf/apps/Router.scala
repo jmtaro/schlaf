@@ -10,7 +10,7 @@ object Router extends core.BaseRouter{
   type Route = apps.Route
   type Phase = apps.Phase
 
-  def resolve(path: String) =
+  override def resolve(path: String) =
     selector.find(path) match{
       case Some((phase, param)) => phase -> new apps.Route(param)
       case None => new ph.error.NotFound -> new apps.Route
