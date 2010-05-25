@@ -41,13 +41,13 @@ class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
             val reg = """.*/appengine-api-1.0-sdk-(.+)\.jar""".r
             jar.absolutePath match {
               case reg(ver) => ver
-              case _ => error("invalid jar file. " + jar)
+              case _ => error("invalid jar file :" + jar)
             }
-          case _ => error("not found appengine api jar.")
+          case _ => error("appengine-api-*.jar not found")
         }
       def path =
         System.getenv("APPENGINE_SDK_HOME") match {
-          case null => error("You need to set APPENGINE_SDK_HOME")
+          case null => error("APPENGINE_SDK_HOME required")
           case sdk => Path fromFile new File(sdk)
         }
     }
@@ -93,7 +93,7 @@ class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
 
     def start(args: Seq[String]): Option[String] = {
       if (running.isDefined){
-        Some("This instance of dev_appserver is already running.")
+        Some("dev_appserver already running")
       } else {
         val builder: ProcessBuilder =
           Process(javaCmd :: jvmOptions :::
