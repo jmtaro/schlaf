@@ -30,10 +30,7 @@ class Request(req: HttpServletRequest) extends core.BaseRequest{
 private[gae] abstract class Parameter[A, B]
   (req: HttpServletRequest) extends collection.Map[A, B]{
 
-  def get(key: A): Option[B] = getTarget(key) match {
-    case null => None
-    case x => Some(x)
-  }
+  def get(key: A): Option[B] = Option(getTarget(key))
 
   def iterator = new collection.Iterator[(A, B)]{
     private type Map = java.util.Map[String, Array[String]]
