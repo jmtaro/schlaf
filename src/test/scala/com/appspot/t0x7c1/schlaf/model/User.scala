@@ -71,10 +71,11 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     val id = "sample-id"
     val nickname = "sample-nickname"
 
-    UserModel create new User(
+    val user = new User(
       id = id,
       nickname = nickname
     )
+    UserModel create user
 
     val nickname2 = "new-nickname"
     val fragment = new UserFragment(nickname = Some(nickname2))
@@ -82,8 +83,13 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
 
     UserModel update userUpdated
 
+    val user2 = UserModel.get(id)
+
     // 値が更新されていればおｋ
-    expect(nickname2){ UserModel.get(id).nickname }
+    expect(nickname2){ user2.nickname }
+
+    // 更新時間も上書きされている
+    assert(user.updated.getTime < user2.updated.getTime)
   }
 
   test("update : success 2"){

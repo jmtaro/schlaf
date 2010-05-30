@@ -54,33 +54,18 @@ object UserModel extends gae.Logger{
 
   def create (item: User): Boolean = {
     val service = getService
-
-    val fragment = new UserFragment
-    fragment.updated = new Date
-
-    val entity = item.update(fragment).toEntity
     val tx = service.beginTransaction
 
     def notFound =
       try{
-        service.get(tx, entity.getKey)
+        service.get(tx, item.toEntity.getKey)
         tx.rollback
         false
       } catch {
         case e: ds.EntityNotFoundException => true
       }
-    def commit =
-      try{
-        service.put(tx, entity)
-        tx.commit
-        true
-      } catch {
-        case e: ConcurrentModificationException =>
-          if (tx.isActive) tx.rollback
-          throw e
-      }
 
-    notFound && commit
+    notFound && commit(service, tx)(item)
   }
 
   def create (user: User, retry: Int): Boolean =
@@ -99,25 +84,15 @@ object UserModel extends gae.Logger{
     def notModified =
       try{
         val entity = service.get(tx, item.toEntity.getKey)
-        val currentItem = entityToItem(entity)
-        if (currentItem.updated != item.updated)
+        val current = entityToItem(entity)
+        if (current.updated != item.updated)
           throw new ConcurrentModificationException
         else true
       } catch {
         case e: ds.EntityNotFoundException => true
       }
-    def commit =
-      try{
-        service.put(tx, item.toEntity)
-        tx.commit
-        true
-      } catch {
-        case e: ConcurrentModificationException =>
-          tx.rollback
-          throw e
-      }
 
-    notModified && commit
+    notModified && commit(service, tx)(item)
   }
 
   def get (id: String): User = find(id) match {
@@ -135,6 +110,22 @@ object UserModel extends gae.Logger{
       case entity => Some(entityToItem(entity))
     }
   }
+
+  private def commit (service: ds.DatastoreService, tx: ds.Transaction)
+    (item: User): Boolean =
+    try{
+      val fragment = new UserFragment(
+        updated = Some(new Date)
+      )
+      val entity = item.update(fragment).toEntity
+      service.put(tx, entity)
+      tx.commit
+      true
+    } catch {
+      case e: ConcurrentModificationException =>
+        if (tx.isActive) tx.rollback
+        throw e
+    }
 
   private[model] def entityToItem(entity: ds.Entity): User = {
     val -- = new {
