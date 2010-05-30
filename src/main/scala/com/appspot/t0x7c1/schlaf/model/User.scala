@@ -56,7 +56,7 @@ object UserModel extends gae.Logger{
     val service = getService
 
     val fragment = new UserFragment
-    fragment.nickname = item.nickname
+    fragment.updated = new Date
 
     val entity = item.update(fragment).toEntity
     val tx = service.beginTransaction
@@ -83,7 +83,7 @@ object UserModel extends gae.Logger{
     notFound && commit
   }
 
-  def create (user: User, retry: Int): Boolean = {
+  def create (user: User, retry: Int): Boolean =
     try {
       create(user)
     } catch {
@@ -91,17 +91,21 @@ object UserModel extends gae.Logger{
         if (retry > 1) create(user, retry - 1)
         else throw e
     }
-  }
 
   def update(item: User): Boolean = {
     val service = getService
     val tx = service.beginTransaction
 
-    def isModified = {
-      val entity = service.get(tx, item.toEntity.getKey)
-      val currentItem = entityToItem(entity)
-      currentItem.updated != item.updated
-    }
+    def notModified =
+      try{
+        val entity = service.get(tx, item.toEntity.getKey)
+        val currentItem = entityToItem(entity)
+        if (currentItem.updated != item.updated)
+          throw new ConcurrentModificationException
+        else true
+      } catch {
+        case e: ds.EntityNotFoundException => true
+      }
     def commit =
       try{
         service.put(tx, item.toEntity)
@@ -113,10 +117,7 @@ object UserModel extends gae.Logger{
           throw e
       }
 
-    if (isModified)
-      throw new ConcurrentModificationException
-    else
-      commit
+    notModified && commit
   }
 
   def get (id: String): User = find(id) match {

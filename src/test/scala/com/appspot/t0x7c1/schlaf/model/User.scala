@@ -32,7 +32,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     val data = UserModel.find(id)
     assert(data != None)
 
-    // 更新後の値と一致する
+    // 作成した値と一致する
     val entity = data.get
     assert(user.id == entity.id)
     assert(user.nickname == entity.nickname)
@@ -84,6 +84,30 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
 
     // 値が更新されていればおｋ
     expect(nickname2){ UserModel.get(id).nickname }
+  }
+
+  test("update : success 2"){
+    // 存在しないエンティティを update した場合
+
+    val id = "sample-id"
+    val user = new User(
+      id = id,
+      nickname = "sample-nickname"
+    )
+    UserModel update user
+
+    // datastore 内に作成されている
+    val data = UserModel.find(id)
+    assert(data != None)
+
+    // 作成した値と一致する
+    val entity = data.get
+    assert(user.id == entity.id)
+    assert(user.nickname == entity.nickname)
+
+    // Date 型の変数あり
+    assert(entity.updated != null)
+    assert(entity.updated.isInstanceOf[java.util.Date])
   }
 
   test("update : ConcurrentModificationException"){
