@@ -136,7 +136,6 @@ object UserModel extends gae.Logger{
   }
 
   private[model] def entityToItem(entity: ds.Entity): User = {
-
     val -- = new {
       def as[A] = entity.getProperty(_: String).asInstanceOf[A]
       val asString = as[String]
@@ -147,26 +146,6 @@ object UserModel extends gae.Logger{
       nickname = --asString "nickname",
       updated = --asDate "updated"
     )
-
-    //implicit def conv(str: String) = new {
-    //  def asString = entity.getProperty(str).asInstanceOf[String]
-    //  def asDate = entity.getProperty(str).asInstanceOf[Date]
-    //}
-    //new User(
-    //  id = "id" asString,
-    //  nickname = "nickname" asString,
-    //  updated = "updated" asDate
-    //)
-
-    //implicit def conv(str: String) = new {
-    //  def as[A] = entity.getProperty(str).asInstanceOf[A]
-    //}
-    //new User(
-    //  id = "id".as[String],
-    //  nickname = "nickname".as[String],
-    //  updated = "updated".as[Date]
-    //)
-
   }
 
 }
