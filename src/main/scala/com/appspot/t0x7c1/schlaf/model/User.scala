@@ -53,46 +53,13 @@ object UserModel extends gae.Logger{
   }
 
   def create (item: User): Boolean = {
-    val service = getService
-    val tx = service.beginTransaction
-
-    def notFound =
-      try{
-        service.get(tx, item.toEntity.getKey)
-        tx.rollback
-        false
-      } catch {
-        case e: ds.EntityNotFoundException => true
-      }
-
-    notFound && commit(service, tx)(item)
+    val service = new InTransaction(getService)
+    service.notFound(item) && service.commit(item)
   }
 
-  def create (user: User, retry: Int): Boolean =
-    try {
-      create(user)
-    } catch {
-      case e: ConcurrentModificationException =>
-        if (retry > 1) create(user, retry - 1)
-        else throw e
-    }
-
   def update(item: User): Boolean = {
-    val service = getService
-    val tx = service.beginTransaction
-
-    def notModified =
-      try{
-        val entity = service.get(tx, item.toEntity.getKey)
-        val current = entityToItem(entity)
-        if (current.updated != item.updated)
-          throw new ConcurrentModificationException
-        else true
-      } catch {
-        case e: ds.EntityNotFoundException => true
-      }
-
-    notModified && commit(service, tx)(item)
+    val service = new InTransaction(getService)
+    service.notModified(item) && service.commit(item)
   }
 
   def get (id: String): User = find(id) match {
@@ -111,21 +78,45 @@ object UserModel extends gae.Logger{
     }
   }
 
-  private def commit (service: ds.DatastoreService, tx: ds.Transaction)
-    (item: User): Boolean =
-    try{
-      val fragment = new UserFragment(
-        updated = Some(new Date)
-      )
-      val entity = item.update(fragment).toEntity
-      service.put(tx, entity)
-      tx.commit
-      true
-    } catch {
-      case e: ConcurrentModificationException =>
-        if (tx.isActive) tx.rollback
-        throw e
-    }
+  protected class InTransaction(service: ds.DatastoreService){
+    val transaction = service.beginTransaction
+
+    def notModified(item: User) =
+      try{
+        val entity = service.get(transaction, item.toEntity.getKey)
+        val current = entityToItem(entity)
+        if (current.updated != item.updated)
+          throw new ConcurrentModificationException
+        else true
+      } catch {
+        case e: ds.EntityNotFoundException => true
+      }
+
+    def notFound(item: User) =
+      try{
+        service.get(transaction, item.toEntity.getKey)
+        transaction.rollback
+        false
+      } catch {
+        case e: ds.EntityNotFoundException => true
+      }
+
+    def commit(item: User) =
+      try{
+        val fragment = new UserFragment(
+          updated = Some(new Date)
+        )
+        val entity = item.update(fragment).toEntity
+        service.put(transaction, entity)
+        transaction.commit
+        true
+      } catch {
+        case e: ConcurrentModificationException =>
+          if (transaction.isActive) transaction.rollback
+          throw e
+      }
+
+  }
 
   private[model] def entityToItem(entity: ds.Entity): User = {
     val -- = new {
