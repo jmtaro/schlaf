@@ -2,20 +2,19 @@ package com.appspot.t0x7c1.schlaf.model
 
 import com.google.appengine.api.{datastore => ds}
 import com.appspot.t0x7c1.zelt.core.gae
-import java.util.Date
 
 class UserNotFoundException(val target: String) extends Exception
 
 class User (
   val id: String,
   val nickname: String,
-  val updated: Date = new Date )
+  val hash: String = UserModel.createHash )
 {
   def update(fragment: UserFragment) =
     new User(
       id = id,
       nickname = fragment.nickname.getOrElse(nickname),
-      updated = fragment.updated.getOrElse(updated)
+      hash = fragment.hash.getOrElse(hash)
     )
 
   private[model] def toEntity: ds.Entity = {
@@ -24,7 +23,7 @@ class User (
     val data = Map(
       "id" -> id,
       "nickname" -> nickname,
-      "updated" -> updated
+      "hash" -> hash
     )
     data foreach { case (k, v) => entity.setProperty(k, v) }
     entity
@@ -34,18 +33,21 @@ class User (
 
 class UserFragment (
   var nickname: Option[String] = None,
-  var updated: Option[Date] = None )
+  var hash: Option[String] = None )
 {
   def nickname_= (str: String) { nickname = Option(str) }
-  def updated_= (date: Date) { updated = Option(date) }
+  def hash_= (str: String) { hash = Option(str) }
 }
 
 object UserModel extends gae.Logger{
   import java.util.ConcurrentModificationException
+  import java.util.UUID
 
   def kind = "user"
 
   def getService = ds.DatastoreServiceFactory.getDatastoreService
+
+  def createHash = UUID.randomUUID.toString
 
   def count = {
     val query = new ds.Query(kind)
@@ -85,7 +87,7 @@ object UserModel extends gae.Logger{
       try{
         val entity = service.get(transaction, item.toEntity.getKey)
         val current = entityToItem(entity)
-        if (current.updated != item.updated)
+        if (current.hash != item.hash)
           throw new ConcurrentModificationException
         else true
       } catch {
@@ -104,7 +106,7 @@ object UserModel extends gae.Logger{
     def commit(item: User) =
       try{
         val fragment = new UserFragment(
-          updated = Some(new Date)
+          hash = Some(UserModel.createHash)
         )
         val entity = item.update(fragment).toEntity
         service.put(transaction, entity)
@@ -122,12 +124,11 @@ object UserModel extends gae.Logger{
     val -- = new {
       def as[A] = entity.getProperty(_: String).asInstanceOf[A]
       val asString = as[String]
-      val asDate = as[Date]
     }
     new User(
       id = --asString "id",
       nickname = --asString "nickname",
-      updated = --asDate "updated"
+      hash = --asString "hash"
     )
   }
 

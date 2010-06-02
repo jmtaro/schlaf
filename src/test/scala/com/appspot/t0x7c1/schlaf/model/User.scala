@@ -37,8 +37,8 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     assert(user.id == entity.id)
     assert(user.nickname == entity.nickname)
 
-    // Date 型の変数あり
-    assert(entity.updated != null)
+    // String 型の変数あり
+    assert(entity.hash != null)
   }
 
   test("create : fail (duplicate)"){
@@ -88,8 +88,8 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     // 値が更新されていればおｋ
     expect(nickname2){ user2.nickname }
 
-    // 更新時間も上書きされている
-    assert(user.updated.getTime < user2.updated.getTime)
+    // ハッシュコードも上書きされている
+    assert(user.hash != user2.hash)
   }
 
   test("update : success 2"){
@@ -111,9 +111,9 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     assert(user.id == entity.id)
     assert(user.nickname == entity.nickname)
 
-    // Date 型の変数あり
-    assert(entity.updated != null)
-    assert(entity.updated.isInstanceOf[java.util.Date])
+    // String 型の変数あり
+    assert(entity.hash != null)
+    assert(entity.hash.isInstanceOf[String])
   }
 
   test("update : ConcurrentModificationException"){
