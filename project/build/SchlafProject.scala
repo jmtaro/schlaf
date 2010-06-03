@@ -12,7 +12,7 @@ class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
       "http://nexus.scala-tools.org/content/repositories/snapshots/"
 
   //val scalatest = "org.scalatest" % "scalatest" % "1.0.1"
-  val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC2-SNAPSHOT" % "test"
+  val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.RC3-SNAPSHOT" % "test"
   val servlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"
 
   override def unmanagedClasspath =
