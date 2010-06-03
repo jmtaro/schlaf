@@ -106,7 +106,7 @@ object UserModel extends gae.Logger{
     def commit(item: User) =
       try{
         val fragment = new UserFragment(
-          hashkey = Some(UUID.randomUUID.toString)
+          hashkey = Some(createHashkey)
         )
         val entity = item.update(fragment).toEntity
         service.put(transaction, entity)
