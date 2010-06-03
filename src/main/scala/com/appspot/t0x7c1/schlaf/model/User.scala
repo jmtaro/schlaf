@@ -8,13 +8,13 @@ class UserNotFoundException(val target: String) extends Exception
 class User (
   val id: String,
   val nickname: String,
-  val hash: String = UserModel.createHash )
+  val hashkey: String = UserModel.createHashkey )
 {
   def update(fragment: UserFragment) =
     new User(
       id = id,
       nickname = fragment.nickname.getOrElse(nickname),
-      hash = fragment.hash.getOrElse(hash)
+      hashkey = fragment.hashkey.getOrElse(hashkey)
     )
 
   private[model] def toEntity: ds.Entity = {
@@ -23,7 +23,7 @@ class User (
     val data = Map(
       "id" -> id,
       "nickname" -> nickname,
-      "hash" -> hash
+      "hashkey" -> hashkey
     )
     data foreach { case (k, v) => entity.setProperty(k, v) }
     entity
@@ -33,10 +33,10 @@ class User (
 
 class UserFragment (
   var nickname: Option[String] = None,
-  var hash: Option[String] = None )
+  var hashkey: Option[String] = None )
 {
   def nickname_= (str: String) { nickname = Option(str) }
-  def hash_= (str: String) { hash = Option(str) }
+  def hashkey_= (str: String) { hashkey = Option(str) }
 }
 
 object UserModel extends gae.Logger{
@@ -47,7 +47,7 @@ object UserModel extends gae.Logger{
 
   def getService = ds.DatastoreServiceFactory.getDatastoreService
 
-  def createHash = UUID.randomUUID.toString
+  def createHashkey = UUID.randomUUID.toString
 
   def count = {
     val query = new ds.Query(kind)
@@ -87,7 +87,7 @@ object UserModel extends gae.Logger{
       try{
         val entity = service.get(transaction, item.toEntity.getKey)
         val current = entityToItem(entity)
-        if (current.hash != item.hash)
+        if (current.hashkey != item.hashkey)
           throw new ConcurrentModificationException
         else true
       } catch {
@@ -106,7 +106,7 @@ object UserModel extends gae.Logger{
     def commit(item: User) =
       try{
         val fragment = new UserFragment(
-          hash = Some(UserModel.createHash)
+          hashkey = Some(UUID.randomUUID.toString)
         )
         val entity = item.update(fragment).toEntity
         service.put(transaction, entity)
@@ -128,7 +128,7 @@ object UserModel extends gae.Logger{
     new User(
       id = --asString "id",
       nickname = --asString "nickname",
-      hash = --asString "hash"
+      hashkey = --asString "hashkey"
     )
   }
 

@@ -38,7 +38,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     assert(user.nickname == entity.nickname)
 
     // String 型の変数あり
-    assert(entity.hash != null)
+    assert(entity.hashkey != null)
   }
 
   test("create : fail (duplicate)"){
@@ -89,7 +89,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     expect(nickname2){ user2.nickname }
 
     // ハッシュコードも上書きされている
-    assert(user.hash != user2.hash)
+    assert(user.hashkey != user2.hashkey)
   }
 
   test("update : success 2"){
@@ -112,8 +112,8 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     assert(user.nickname == entity.nickname)
 
     // String 型の変数あり
-    assert(entity.hash != null)
-    assert(entity.hash.isInstanceOf[String])
+    assert(entity.hashkey != null)
+    assert(entity.hashkey.isInstanceOf[String])
   }
 
   test("update : ConcurrentModificationException"){
