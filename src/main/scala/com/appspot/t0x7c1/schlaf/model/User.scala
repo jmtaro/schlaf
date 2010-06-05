@@ -45,7 +45,7 @@ object UserModel extends gae.Logger{
 
   def kind = "user"
 
-  def getService = ds.DatastoreServiceFactory.getDatastoreService
+  protected def getService = ds.DatastoreServiceFactory.getDatastoreService
 
   def createHashkey = UUID.randomUUID.toString
 
@@ -54,9 +54,10 @@ object UserModel extends gae.Logger{
     getService.prepare(query).countEntities
   }
 
-  def put(item: User): Boolean = {
-    val service = new InTransaction(getService)
-    service.notModified(item) && service.put(item)
+  def put(item: User) {
+    val op = new InTransaction with UniqueItemSetter with UniqueItemGetter
+    op confirmNotModified item
+    op put item
   }
 
   def get (id: String): User = find(id) match {
@@ -75,21 +76,32 @@ object UserModel extends gae.Logger{
     }
   }
 
-  protected class InTransaction(service: ds.DatastoreService){
-    val transaction = service.beginTransaction
+  protected class InTransaction{
+    lazy val service = ds.DatastoreServiceFactory.getDatastoreService
+    lazy val transaction = service.beginTransaction
+  }
 
-    def notModified(item: User) =
+  protected abstract trait TransactionOp {
+    val service: ds.DatastoreService
+    val transaction: ds.Transaction
+  }
+
+  protected trait ItemSetter extends TransactionOp{
+    def put(item: User) {
       try{
-        val entity = service.get(transaction, item.toEntity.getKey)
-        val current = entityToItem(entity)
-        if (current.hashkey != item.hashkey)
-          throw new ConcurrentModificationException
-        else true
+        val entity = item.toEntity
+        service.put(transaction, entity)
+        transaction.commit
       } catch {
-        case e: ds.EntityNotFoundException => true
+        case e: ConcurrentModificationException =>
+          if (transaction.isActive) transaction.rollback
+          throw e
       }
+    }
+  }
 
-    def notFound(item: User) =
+  protected trait BasicItemGetter extends TransactionOp{
+    def notFound(item: User): Boolean =
       try{
         service.get(transaction, item.toEntity.getKey)
         transaction.rollback
@@ -97,22 +109,30 @@ object UserModel extends gae.Logger{
       } catch {
         case e: ds.EntityNotFoundException => true
       }
+  }
 
-    def put(item: User) =
+  protected trait UniqueItemSetter extends ItemSetter{
+    override def put(item: User) {
+      val fragment = new UserFragment(
+        hashkey = Some(createHashkey)
+      )
+      super.put(item.update(fragment))
+    }
+  }
+
+  protected trait UniqueItemGetter extends TransactionOp{
+    def confirmNotModified(item: User) {
       try{
-        val fragment = new UserFragment(
-          hashkey = Some(createHashkey)
-        )
-        val entity = item.update(fragment).toEntity
-        service.put(transaction, entity)
-        transaction.commit
-        true
+        val entity = service.get(transaction, item.toEntity.getKey)
+        val current = entityToItem(entity)
+        if (current.hashkey != item.hashkey){
+          transaction.rollback
+          throw new ConcurrentModificationException
+        }
       } catch {
-        case e: ConcurrentModificationException =>
-          if (transaction.isActive) transaction.rollback
-          throw e
+        case e: ds.EntityNotFoundException =>// noop
       }
-
+    }
   }
 
   private[model] def entityToItem(entity: ds.Entity): User = {

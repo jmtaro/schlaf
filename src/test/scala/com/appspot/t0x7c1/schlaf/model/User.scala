@@ -49,7 +49,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       id = id,
       nickname = "sample-nickname"
     )
-    expect(true){ UserModel put user1 }
+    UserModel put user1
 
     val user2 = new User(
       id = id,
