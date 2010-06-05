@@ -2,6 +2,7 @@ package com.appspot.t0x7c1.schlaf.model
 
 import com.google.appengine.api.{datastore => ds}
 import com.appspot.t0x7c1.zelt.core.gae
+import java.util.UUID
 
 class UserNotFoundException(val target: String) extends Exception
 
@@ -10,12 +11,15 @@ class User (
   val nickname: String,
   val hashkey: String = UserModel.createHashkey )
 {
-  def update(fragment: UserFragment) =
+  def update(fragment: UserFragment): User =
     new User(
       id = id,
       nickname = fragment.nickname.getOrElse(nickname),
       hashkey = fragment.hashkey.getOrElse(hashkey)
     )
+
+  def update(uuid: UUID): User =
+    this update new UserFragment(hashkey = Some(uuid.toString))
 
   private[model] def toEntity: ds.Entity = {
     val key = ds.KeyFactory.createKey(UserModel.kind, id)
@@ -41,7 +45,6 @@ class UserFragment (
 
 object UserModel extends gae.Logger{
   import java.util.ConcurrentModificationException
-  import java.util.UUID
 
   def kind = "user"
 
@@ -112,12 +115,7 @@ object UserModel extends gae.Logger{
   }
 
   protected trait UniqueItemSetter extends ItemSetter{
-    override def put(item: User) {
-      val fragment = new UserFragment(
-        hashkey = Some(createHashkey)
-      )
-      super.put(item.update(fragment))
-    }
+    override def put(item: User) = super.put(item update UUID.randomUUID)
   }
 
   protected trait UniqueItemGetter extends TransactionOp{
