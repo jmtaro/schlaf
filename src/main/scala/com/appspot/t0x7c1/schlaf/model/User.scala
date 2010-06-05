@@ -54,14 +54,9 @@ object UserModel extends gae.Logger{
     getService.prepare(query).countEntities
   }
 
-  def create (item: User): Boolean = {
+  def put(item: User): Boolean = {
     val service = new InTransaction(getService)
-    service.notFound(item) && service.commit(item)
-  }
-
-  def update(item: User): Boolean = {
-    val service = new InTransaction(getService)
-    service.notModified(item) && service.commit(item)
+    service.notModified(item) && service.put(item)
   }
 
   def get (id: String): User = find(id) match {
@@ -103,7 +98,7 @@ object UserModel extends gae.Logger{
         case e: ds.EntityNotFoundException => true
       }
 
-    def commit(item: User) =
+    def put(item: User) =
       try{
         val fragment = new UserFragment(
           hashkey = Some(createHashkey)

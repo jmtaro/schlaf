@@ -20,89 +20,15 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     helper.tearDown
   }
 
-  test("create & find"){
+  test("put & find"){
     val id = "sample-id"
     val user = new User(
       id = id,
       nickname = "sample-nickname"
     )
-    UserModel create user
+    UserModel put user
 
-    // datastore 内に作成されている
-    val data = UserModel.find(id)
-    assert(data != None)
-
-    // 作成した値と一致する
-    val entity = data.get
-    assert(user.id == entity.id)
-    assert(user.nickname == entity.nickname)
-
-    // String 型の変数あり
-    assert(entity.hashkey != null)
-  }
-
-  test("create : fail (duplicate)"){
-    val id = "sample-id"
-
-    val user1 = new User(
-      id = id,
-      nickname = "sample-nickname"
-    )
-    expect(true){ UserModel create user1 }
-
-    val user2 = new User(
-      id = id,
-      nickname = "sample-nickname2"
-    )
-    // 既に user1 が存在するので create 失敗
-    expect(false){ UserModel create user2 }
-
-    // 多重に create されていない
-    expect(1){ UserModel.count }
-
-    val item = UserModel.find(id).get
-
-    // 更新後の値と一致すればおｋ
-    assert(user1.id == item.id)
-    assert(user1.nickname == item.nickname)
-  }
-
-  test("update : success"){
-    val id = "sample-id"
-    val nickname = "sample-nickname"
-
-    val user = new User(
-      id = id,
-      nickname = nickname
-    )
-    UserModel create user
-
-    val nickname2 = "new-nickname"
-    val fragment = new UserFragment(nickname = Some(nickname2))
-    val userUpdated = UserModel.get(id).update(fragment)
-
-    UserModel update userUpdated
-
-    val user2 = UserModel.get(id)
-
-    // 値が更新されていればおｋ
-    expect(nickname2){ user2.nickname }
-
-    // ハッシュコードも上書きされている
-    assert(user.hashkey != user2.hashkey)
-  }
-
-  test("update : success 2"){
-    // 存在しないエンティティを update した場合
-
-    val id = "sample-id"
-    val user = new User(
-      id = id,
-      nickname = "sample-nickname"
-    )
-    UserModel update user
-
-    // datastore 内に作成されている
+    // datastore 内に格納されている
     val data = UserModel.find(id)
     assert(data != None)
 
@@ -116,10 +42,64 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
     assert(entity.hashkey.isInstanceOf[String])
   }
 
-  test("update : ConcurrentModificationException"){
+  test("put : duplicate-error"){
+    val id = "sample-id"
+
+    val user1 = new User(
+      id = id,
+      nickname = "sample-nickname"
+    )
+    expect(true){ UserModel put user1 }
+
+    val user2 = new User(
+      id = id,
+      nickname = "sample-nickname2"
+    )
+
+    // 既に user1 が存在するので put 失敗
+    intercept[java.util.ConcurrentModificationException]{
+      UserModel put user2
+    }
+
+    // 多重に格納されていない
+    expect(1){ UserModel.count }
+
+    val item = UserModel.find(id).get
+
+    // 格納した値と一致すればおｋ
+    assert(user1.id == item.id)
+    assert(user1.nickname == item.nickname)
+  }
+
+  test("put : success"){
     val id = "sample-id"
     val nickname = "sample-nickname"
-    UserModel create new User(
+
+    val user = new User(
+      id = id,
+      nickname = nickname
+    )
+    UserModel put user
+
+    val nickname2 = "new-nickname"
+    val fragment = new UserFragment(nickname = Some(nickname2))
+    val userUpdated = UserModel.get(id).update(fragment)
+
+    UserModel put userUpdated
+
+    val user2 = UserModel.get(id)
+
+    // 値が更新されていればおｋ
+    expect(nickname2){ user2.nickname }
+
+    // ハッシュキーも更新されている
+    assert(user.hashkey != user2.hashkey)
+  }
+
+  test("put : ConcurrentModificationException"){
+    val id = "sample-id"
+    val nickname = "sample-nickname"
+    UserModel put new User(
       id = id,
       nickname = nickname
     )
@@ -132,7 +112,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
 
     // user2 は datastore 内の entity と異なるため必ず失敗
     intercept[java.util.ConcurrentModificationException]{
-      UserModel update user2
+      UserModel put user2
     }
 
     val user = UserModel get id
