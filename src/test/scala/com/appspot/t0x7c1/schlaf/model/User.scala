@@ -80,20 +80,33 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       nickname = nickname
     )
     UserModel put user
+    expect(1){ UserModel.count }
 
     val nickname2 = "new-nickname"
-    val fragment = new UserFragment(nickname = Some(nickname2))
-    val userUpdated = UserModel.get(id).update(fragment)
 
-    UserModel put userUpdated
+    // update
+    UserModel.find(id) match {
+      case None => assert(false)
+      case Some(u) =>
+        val fr = new UserFragment(nickname = Some(nickname2))
+        UserModel put u.update(fr)
+    }
 
-    val user2 = UserModel.get(id)
+    // confirm
+    UserModel.find(id) match {
+      case None => assert(false)
+      case Some(u) =>
+        expect(nickname2){ u.nickname }// 値が更新されていればおｋ
+        assert(user.hashkey != u.hashkey)// ハッシュキーも更新されている
+    }
+    expect(1){ UserModel.count }
 
-    // 値が更新されていればおｋ
-    expect(nickname2){ user2.nickname }
+    UserModel put new User(
+      id = "sample-id-2",
+      nickname = "new nickname foobar"
+    )
+    expect(2){ UserModel.count }
 
-    // ハッシュキーも更新されている
-    assert(user.hashkey != user2.hashkey)
   }
 
   test("put : ConcurrentModificationException"){
@@ -115,11 +128,15 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       UserModel put user2
     }
 
-    val user = UserModel get id
+    UserModel.find(id) match {
+      case None => assert(false)
+      case Some(u) =>
+        // 更新に失敗しているので値に変化なし
+        assert(u.nickname == nickname)
+        assert(u.nickname != nickname2)
+    }
 
-    // 更新に失敗しているので値に変化なし
-    assert(user.nickname == nickname)
-    assert(user.nickname != nickname2)
+
   }
 
 }
