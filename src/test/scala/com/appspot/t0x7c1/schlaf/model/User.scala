@@ -8,7 +8,8 @@ import org.scalatest.{
   FunSuite, BeforeAndAfterEach
 }
 
-class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
+
+class UserDataTestSuite extends FunSuite with BeforeAndAfterEach{
   val config = new LocalDatastoreServiceTestConfig
   val helper = new LocalServiceTestHelper(config)
 
@@ -26,10 +27,10 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       id = id,
       nickname = "sample-nickname"
     )
-    UserModel put user
+    UserData put user
 
     // datastore 内に格納されている
-    val data = UserModel.find(id)
+    val data = UserData.find(id)
     assert(data != None)
 
     // 作成した値と一致する
@@ -49,7 +50,7 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       id = id,
       nickname = "sample-nickname"
     )
-    UserModel put user1
+    UserData put user1
 
     val user2 = new User(
       id = id,
@@ -58,13 +59,13 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
 
     // 既に user1 が存在するので put 失敗
     intercept[java.util.ConcurrentModificationException]{
-      UserModel put user2
+      UserData put user2
     }
 
     // 多重に格納されていない
-    expect(1){ UserModel.count }
+    expect(1){ UserData.count }
 
-    val item = UserModel.find(id).get
+    val item = UserData.find(id).get
 
     // 格納した値と一致すればおｋ
     assert(user1.id == item.id)
@@ -79,40 +80,38 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
       id = id,
       nickname = nickname
     )
-    UserModel put user
-    expect(1){ UserModel.count }
+    UserData put user
+    expect(1){ UserData.count }
 
     val nickname2 = "new-nickname"
 
     // update
-    UserModel.find(id) match {
+    UserData.find(id) match {
       case None => assert(false)
-      case Some(u) =>
-        val fr = new UserFragment(nickname = Some(nickname2))
-        UserModel put u.update(fr)
+      case Some(u) => UserData put u.copy(nickname = nickname2)
     }
 
     // confirm
-    UserModel.find(id) match {
+    UserData.find(id) match {
       case None => assert(false)
       case Some(u) =>
         expect(nickname2){ u.nickname }// 値が更新されていればおｋ
         assert(user.hashkey != u.hashkey)// ハッシュキーも更新されている
     }
-    expect(1){ UserModel.count }
+    expect(1){ UserData.count }
 
-    UserModel put new User(
+    UserData put new User(
       id = "sample-id-2",
       nickname = "new nickname foobar"
     )
-    expect(2){ UserModel.count }
+    expect(2){ UserData.count }
 
   }
 
   test("put : ConcurrentModificationException"){
     val id = "sample-id"
     val nickname = "sample-nickname"
-    UserModel put new User(
+    UserData put new User(
       id = id,
       nickname = nickname
     )
@@ -125,17 +124,16 @@ class UserModelTestSuite extends FunSuite with BeforeAndAfterEach{
 
     // user2 は datastore 内の entity と異なるため必ず失敗
     intercept[java.util.ConcurrentModificationException]{
-      UserModel put user2
+      UserData put user2
     }
 
-    UserModel.find(id) match {
+    UserData.find(id) match {
       case None => assert(false)
       case Some(u) =>
         // 更新に失敗しているので値に変化なし
         assert(u.nickname == nickname)
         assert(u.nickname != nickname2)
     }
-
 
   }
 
