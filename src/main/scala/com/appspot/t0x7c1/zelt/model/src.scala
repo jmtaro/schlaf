@@ -66,7 +66,7 @@ class PropertyInspector(entity: ds.Entity){
   def set [A](kv: (String, A)) = entity.setProperty(kv._1, kv._2)
 }
 
-trait UniqueItemData extends ItemConverter{
+trait UniqueItemModel extends ItemConverter{
   type Item <: model.UniqueItem
 
   def rebuild(item: Item): Item
