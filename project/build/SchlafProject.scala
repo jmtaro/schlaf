@@ -7,8 +7,8 @@ import sbt.Process._
 
 class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
 
-  val scalatest = "org.scalatest" % "scalatest" % "1.2"
-  val servlet = "javax.servlet" % "servlet-api" % "2.5"
+  val scalatest = "org.scalatest" % "scalatest" % "1.2" % "provided"
+  val servlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"
 
   override def unmanagedClasspath =
     super.unmanagedClasspath +++ gae.classpath +++ gae.testpath
