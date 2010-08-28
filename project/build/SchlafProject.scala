@@ -7,12 +7,8 @@ import sbt.Process._
 
 class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
 
-  val newReleaseToolsRepository =
-    "Scala Tools Repository" at
-      "http://nexus.scala-tools.org/content/repositories/snapshots/"
-
-  val scalatest = "org.scalatest" % "scalatest" % "1.2-for-scala-2.8.0.final-SNAPSHOT" % "test"
-  val servlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"
+  val scalatest = "org.scalatest" % "scalatest" % "1.2"
+  val servlet = "javax.servlet" % "servlet-api" % "2.5"
 
   override def unmanagedClasspath =
     super.unmanagedClasspath +++ gae.classpath +++ gae.testpath
