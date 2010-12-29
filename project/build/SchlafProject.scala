@@ -72,7 +72,7 @@ class SchlafProject(info: ProjectInfo) extends DefaultWebProject(info) {
 
   class DevAppserverRun() extends Runnable with ExitHook {
     ExitHooks.register(this)
-    def name = "dev_appserver-shitdown"
+    def name = "dev_appserver-shutdown"
     def runBeforeExiting() { stop() }
 
     val jvmOptions =
